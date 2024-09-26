@@ -7,36 +7,41 @@ import (
 )
 
 func BFS(AdjList map[string][]string) {
+	var s Start
+	start := s.start
+	Queue := []string{start}
+	Visited := []string{start}
 
-	//var s Start
-	//start := s.start
-	var Queue []string {"1", "2", "3"}
+	for len(Queue) > 0{
 
-	x := Dequeue(Queue)
-	fmt.Println(x)
-	x = Dequeue(Queue)
-	fmt.Println(x)
+	}
+	Enqueue()
 
-
+	Queue, out = Dequeue(Queue)
+	fmt.Println(x, out)
 }
 
-func Enqueue(Queue []string, toAdd string) []string{
+func Enqueue(Queue map[string][]string, toAdd string) []string {
 	Queue = append(Queue, toAdd)
 
 	return Queue
 }
 
-func Dequeue(Queue []string) []string{
-	if len(Queue) > 1{
-
-		Queue = append(Queue[1:2], Queue[2:]...)
-		return Queue
+func Dequeue(Queue []string) ([]string, string) {
+	var out string
+	if len(Queue) > 0 {
+		out = Queue[0]
 	}
-	return nil
+	if len(Queue) > 1 {
 
+		x := make([]string, len(Queue)-1)
+		x = append(Queue[:0], Queue[1:]...)
+		return x, out
+	}
+	return nil, out
 }
 
-func EdgeListToAdjList(List [][]string) map[string][]string{
+func EdgeListToAdjList(List [][]string) map[string][]string {
 	var hold [][]string
 	m := make(map[string][]string)
 	for _, Node := range List {
@@ -59,7 +64,10 @@ func EdgeListToAdjList(List [][]string) map[string][]string{
 		m[v[1]] = append(m[v[1]], v[0])
 
 	}
+	fmt.Println(m)
 	BFS(m)
 
 	return m
 }
+
+// room.name visited
