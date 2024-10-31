@@ -1,63 +1,109 @@
 package main
 
 import (
-	//"fmt"
-	"lem-in/graphs"
-	"lem-in/rooms"
+	"fmt"
+	graphs "lem-in/Graphs"
+	paths "lem-in/Paths"
+	readata "lem-in/ReadData"
+	rooms "lem-in/Rooms"
+	"log"
+	"os"
+	"strings"
 )
 
+var (
+	ArrayRooms = make([]*rooms.Room, 0)
+)
 
+func getRoom(name string) *rooms.Room {
+	for _, v := range ArrayRooms {
+		if v != nil && v.GetName() == name {
+			return v
+		}
+	}
+	return nil
+}
 
-func main(){
+func CreateRooms(graph *graphs.Graph, sourceArray []string) {
+	for _, name := range sourceArray {
+		myRoom := rooms.NewRoom(name, 1, 2)
+		ArrayRooms = append(ArrayRooms, myRoom)
+	}
+	graph.NewGraph(sourceArray)
+}
+
+func LinkRoomsTogether(graph *graphs.Graph, RoomsLinkedSource []string) {
+	for _, link := range RoomsLinkedSource {
+		roomsLinked := strings.Split(link, "-")
+		graph.AddRoom(getRoom(roomsLinked[0]), getRoom(roomsLinked[1]))
+	}
+}
+
+func main() {
+	// Check arguments
+	arg := os.Args
+	if len(arg) != 2 {
+		fmt.Println("[USAGE]: go run . example.txt")
+		return
+	}
+
+	// Read file
+	file, err := os.ReadFile(arg[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Process input
+	slice := strings.Split(string(file), "\n")
+	var hold []string
+	for _, v := range slice {
+		if v == "" {
+			continue
+		}
+		hold = append(hold, v)
+	}
+
+	// Extract start, end rooms and ant count
+	start, end, antCount := readata.ExtractStartAndEnd(hold)
+	if start == "" || end == "" {
+		fmt.Println("Error: Invalid start or end room")
+		return
+	}
+
+	// Get edges and create adjacency list
+	EdjeList := readata.ExtractEdgeList(hold)
+	if len(EdjeList) == 0 {
+		fmt.Println("Error: No valid paths found")
+		return
+	}
+	AdjList := readata.EdgeListToAdjList(EdjeList)
+	// Create graph
 	myGraph := graphs.Graph{}
-	 myGraph.NewGraph([]string{"s","0","1","2","3","4","5","6","7","8","t"})
-	//room_start := rooms.NewRoom("s",1,2)
-	room_s := rooms.NewRoom("s",1,2)
-	room_0 := rooms.NewRoom("0",1,2)
-	room_1 := rooms.NewRoom("1",1,2)
-	room_2 := rooms.NewRoom("2",1,2)
-	room_3 := rooms.NewRoom("3",1,2)
-	room_4 := rooms.NewRoom("4",1,2)
-	room_5 := rooms.NewRoom("5",1,2)
-	room_6 := rooms.NewRoom("6",1,2)
-	room_7 := rooms.NewRoom("7",1,2)
-	room_8 := rooms.NewRoom("8",1,2)
-
-	room_t := rooms.NewRoom("t",1,2)
-
-
-	 myGraph.AddRoom(room_s,room_0)
-	 myGraph.AddRoom(room_s,room_1)
-	 myGraph.AddRoom(room_s,room_2)
-	 myGraph.AddRoom(room_0,room_3)
-	 myGraph.AddRoom(room_0,room_4) 
-	 myGraph.AddRoom(room_1,room_4)
-	 myGraph.AddRoom(room_1,room_5)
-	 myGraph.AddRoom(room_2,room_3)
-	 myGraph.AddRoom(room_2,room_7)
-	 myGraph.AddRoom(room_3,room_6)
-	 myGraph.AddRoom(room_3,room_7)
-	 myGraph.AddRoom(room_4,room_6)
-	 myGraph.AddRoom(room_4,room_8)
-	 myGraph.AddRoom(room_4,room_5)
-	 myGraph.AddRoom(room_5,room_8)
-	 myGraph.AddRoom(room_6,room_t)
-	 myGraph.AddRoom(room_7,room_t)
-	 myGraph.AddRoom(room_8,room_t)
-	 myGraph.DFSExplore(room_s)
-	//myGraph.ShowAdjList()
-	/*myGraph := NewGraph(11)
-	myGraph.AddNode(0,4)
-	myGraph.AddNode(0,6)
-	myGraph.AddNode(1,3)
-	myGraph.AddNode(4,3)
-	myGraph.AddNode(5,2)
-	myGraph.AddNode(3,5)
-	myGraph.AddNode(4,2)
-	myGraph.AddNode(2,1)
-	myGraph.AddNode(7,6)
-	myGraph.AddNode(7,2)
-	myGraph.AddNode(7,4)
-	myGraph.AddNode(6,5)
-	myGraph.DFSsearch(0,5)*/
+	// Create array of room names
+	var arr []string
+	for k := range AdjList {
+		arr = append(arr, k)
+	}
+	// Initialize rooms and links
+	CreateRooms(&myGraph, arr)
+	LinkRoomsTogether(&myGraph, EdjeList)
+	// Find start room object
+	startRoom := getRoom(start)
+	if startRoom == nil {
+		fmt.Println("Error: Start room not found in graph")
+		return
+	}
+	// Explore paths
+	myGraph.DFSExplore(startRoom, end)
+	if len(myGraph.Paths) == 0 {
+		fmt.Println("Error: No valid paths found between start and end rooms")
+		return
+	}
+	// Process paths and distribute ants
+	groupedPaths := paths.GroupUniquePaths(myGraph.Paths)
+	bestPath := paths.FindBestGroup(groupedPaths, antCount)
+	paths.GetAllPaths(bestPath)
+	paths.MakeAntsInPlaces(antCount)
+	result := paths.MoveAnts()
+	fmt.Printf("%v",result)
 }

@@ -34,3 +34,4 @@ func (R *Room) GetName() string{
 func (R *Room) SetVisited(b bool) {
 	R.isVisited = b
 }
+
