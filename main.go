@@ -4,9 +4,8 @@ import (
 	"fmt"
 	graphs "lem-in/Graphs"
 	paths "lem-in/Paths"
-	readata "lem-in/ReadData"
+	data "lem-in/ReadData"
 	rooms "lem-in/Rooms"
-	"log"
 	"os"
 	"strings"
 )
@@ -40,70 +39,42 @@ func LinkRoomsTogether(graph *graphs.Graph, RoomsLinkedSource []string) {
 }
 
 func main() {
-	// Check arguments
-	arg := os.Args
-	if len(arg) != 2 {
-		fmt.Println("[USAGE]: go run . example.txt")
-		return
-	}
+    // Check arguments
+    arg := os.Args
+    rooms,linkedRooms, num_ants, _ := data.GetData(arg[1])
+   /* var linksRooms = []string{}
+	fmt.Printf("rooms before : %v \n",rooms)
+    for i := 0; i < len(EdjeList); i++ {	
+		linksRooms = append(linksRooms, (EdjeList[i][0]))
+    }
+    for i := 0; i < len(rooms); i++ {	
+		if rooms[i] == start {
+			rooms[0], rooms[i] = rooms[i], rooms[0]	
+        }
+        if rooms[i] == end {
+			rooms[len(rooms)-1], rooms[i] = rooms[i], rooms[len(rooms)-1]	
+        }
+    }*/
+	fmt.Printf("rooms after : %v \n",rooms)
+	fmt.Printf("Linked rooms  : %v \n",linkedRooms)
 
-	// Read file
-	file, err := os.ReadFile(arg[1])
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Process input
-	slice := strings.Split(string(file), "\n")
-	var hold []string
-	for _, v := range slice {
-		if v == "" {
-			continue
-		}
-		hold = append(hold, v)
-	}
-
-	// Extract start, end rooms and ant count
-	start, end, antCount := readata.ExtractStartAndEnd(hold)
-	if start == "" || end == "" {
-		fmt.Println("Error: Invalid start or end room")
-		return
-	}
-
-	// Get edges and create adjacency list
-	EdjeList := readata.ExtractEdgeList(hold)
-	if len(EdjeList) == 0 {
-		fmt.Println("Error: No valid paths found")
-		return
-	}
-	AdjList := readata.EdgeListToAdjList(EdjeList)
-	// Create graph
-	myGraph := graphs.Graph{}
-	// Create array of room names
-	var arr []string
-	for k := range AdjList {
-		arr = append(arr, k)
-	}
-	// Initialize rooms and links
-	CreateRooms(&myGraph, arr)
-	LinkRoomsTogether(&myGraph, EdjeList)
-	// Find start room object
-	startRoom := getRoom(start)
-	if startRoom == nil {
-		fmt.Println("Error: Start room not found in graph")
-		return
-	}
-	// Explore paths
-	myGraph.DFSExplore(startRoom, end)
-	if len(myGraph.Paths) == 0 {
-		fmt.Println("Error: No valid paths found between start and end rooms")
-		return
-	}
-	// Process paths and distribute ants
-	groupedPaths := paths.GroupUniquePaths(myGraph.Paths)
-	bestPath := paths.FindBestGroup(groupedPaths, antCount)
-	paths.GetAllPaths(bestPath)
-	paths.MakeAntsInPlaces(antCount)
-	result := paths.MoveAnts()
-	fmt.Printf("%v",result)
+    myGraph := graphs.Graph{}
+    // Initialize rooms and links
+    CreateRooms(&myGraph, rooms)
+    LinkRoomsTogether(&myGraph, linkedRooms)
+    // Explore paths
+    myGraph.DFSExplore(ArrayRooms[0], ArrayRooms[len(ArrayRooms)-1].GetName())
+    if len(myGraph.Paths) == 0 {
+        fmt.Println("Error: No valid paths found between start and end rooms")
+        return
+    }
+    // Process paths and distribute ants
+    groupedPaths := paths.GroupUniquePaths(myGraph.Paths)
+    bestPath := paths.FindBestGroup(groupedPaths, num_ants)
+    paths.GetAllPaths(bestPath)
+    paths.MakeAntsInPlaces(num_ants)
+	paths.ShowPathList()
+    result := paths.MoveAnts()
+    fmt.Printf("%v", result)
+	fmt.Printf("type : %v \n",data.CheckType("##cstart")) 
 }
