@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ParseFile(arg []string) ([][]string, []string, int, string, string) {
+func ParseFile(arg []string) ([]string,[][]string, []string, int, string, string) {
 	if len(arg) != 2 {
 		fmt.Println("[USAGE]: go run . example.txt")
 		os.Exit(1)
@@ -21,29 +21,27 @@ func ParseFile(arg []string) ([][]string, []string, int, string, string) {
 	}
 
 	slice := strings.Split(string(file), "\n")
-	fmt.Printf("slice : %v \n", slice)
 	var num_ants int = 0
 
 	firstline := true
 	for _, line := range slice {
+		numOfAnts, err := strconv.Atoi(line)
 		if firstline && !(strings.HasPrefix(line, "#") || strings.HasPrefix(line, "L")) {
-			numOfAnts, err := strconv.Atoi(line)
 			if err != nil {
 				fmt.Println("ERROR: invalid data format", err)
 				os.Exit(1)
 			}
 
 			if numOfAnts <= 0 {
-				fmt.Println("ERROR: invalid data format, there is no ant")
+				fmt.Println("ERROR: invalid data format")
 				os.Exit(1)
 			}
 			num_ants = numOfAnts
 			firstline = false
+		} else if err == nil && !firstline {
+			fmt.Println("ERROR: invalid data format")
+			os.Exit(1)
 		}
-		if line == "" {
-			continue
-		}
-
 	}
 
 	// unique1 from rooms
@@ -54,10 +52,10 @@ func ParseFile(arg []string) ([][]string, []string, int, string, string) {
 
 	// we check if there is an imposter
 	if !Equal(unique1, unique2, start, end) {
-		fmt.Println("ERROR: invalid data format, there is an imposter")
+		fmt.Println("ERROR: invalid data format")
 		os.Exit(1)
 	}
-	return EdjeList, unique2, num_ants, start, end
+	return slice,EdjeList, unique2, num_ants, start, end
 }
 
 func ExtractStartAndEnd(data []string) (string, string, []string) {
@@ -68,18 +66,21 @@ func ExtractStartAndEnd(data []string) (string, string, []string) {
 	checkS := false
 	checkE := false
 	unique := []string{}
-
 	for i, line := range data {
-
+		// fmt.Printf("value : %v ; type : %v \n",line,CheckType(line))
+		if CheckType(line) == "error" && line != "" {
+			fmt.Println("ERROR: invalid data format")
+			os.Exit(1)
+		}
 		// append rooms
-		if strings.Contains(line, " ") {
+		if strings.Contains(line, " ") && !strings.HasPrefix(line, "#") && !strings.HasPrefix(line, "L") {
 			hold := strings.Split(line, " ")
 			if len(hold) == 3 {
 				CheckValidRoom(hold)
 				unique = append(unique, hold[0])
 
 			} else {
-				fmt.Println("ERROR: invalid data format, over or miss corrdinates in line", i, "--->", line)
+				fmt.Println("ERROR: invalid data format")
 				os.Exit(1)
 			}
 		}
@@ -91,12 +92,12 @@ func ExtractStartAndEnd(data []string) (string, string, []string) {
 			continue
 		}
 		if checkS {
-
-			if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "L") {
-				continue
+			if CheckType(line) == "room" {
+				Start = strings.Split(line, " ")[0]
+			} else {
+				fmt.Println("ERROR: invalid data format")
+				os.Exit(1)
 			}
-			S := GetStartAndEnd(line, Start, checkS, sCount)
-			Start = S
 			checkS = false
 		}
 		if line == "##end" {
@@ -105,21 +106,22 @@ func ExtractStartAndEnd(data []string) (string, string, []string) {
 			continue
 		}
 		if checkE {
-			if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "L") {
-				continue
+			if CheckType(line) == "room" {
+				End = strings.Split(line, " ")[0]
+			} else {
+				fmt.Println("ERROR: invalid data format")
+				os.Exit(1)
 			}
-			E := GetStartAndEnd(line, End, checkE, eCount)
-			End = E
 			checkE = false
 
 		}
 		if i == len(data)-1 && (Start == "" || End == "") {
-			fmt.Println("ERROR: invalid data format, there is no start or no end", line)
+			fmt.Println("ERROR: invalid data format")
 			os.Exit(1)
 		}
 
 	}
-
+	
 	// return unique from rooms A1 0 1,, A2 0 1, A3 0 1 ....
 	return Start, End, unique
 }
@@ -145,7 +147,7 @@ func EdgeListToUniques(List [][]string) []string {
 
 			roomToRoom := strings.Split(v, "-")
 			if roomToRoom[0] == roomToRoom[1] {
-				fmt.Println("ERROR: invalid data format, room link to itself --->", roomToRoom[0])
+				fmt.Println("ERROR: invalid data format")
 				os.Exit(1)
 			}
 			hold = append(hold, roomToRoom)
@@ -198,12 +200,12 @@ func Equal(unique1, unique2 []string, start, end string) bool {
 
 func CheckValidRoom(room []string) {
 	if _, err := strconv.Atoi(room[1]); err != nil {
-		fmt.Println("ERROR: invalid data format in coordinates --->", room)
+		fmt.Println("ERROR: invalid data format")
 		os.Exit(1)
 	}
 
 	if _, err := strconv.Atoi(room[2]); err != nil {
-		fmt.Println("ERROR: invalid data format in room --->", room)
+		fmt.Println("ERROR: invalid data format")
 		os.Exit(1)
 	}
 }
@@ -217,22 +219,12 @@ func GetStartAndEnd(v, StartOrEnd string, check bool, Count int) string {
 			check = false
 		}
 		if Count > 1 {
-			fmt.Println("ERROR: invalid data format, more than one start or end")
+			fmt.Println("ERROR: invalid data format")
 			os.Exit(1)
 		}
 	}
 
 	return StartOrEnd
-}
-
-//============================================ abdelouahab khiri Code ============================================================
-
-func ReadFromFile(fileName string) []string {
-	file, err := os.ReadFile(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return strings.Split(string(file), "\n")
 }
 
 func CheckType(data string) string {
@@ -270,63 +262,6 @@ func CheckType(data string) string {
 		}
 	}
 	return "error"
-}
-
-func GetData(fileName string) ([]string, []string, int, string) {
-	slice := ReadFromFile(fileName)
-	arrayRooms := []string{}
-	LinkedRooms := []string{}
-	start := ""
-	end := ""
-	isStart := false
-	isEnd := false
-	n_Ants := 0
-	for index, line := range slice {
-		data_Type := CheckType(line)
-		if index == 0 {
-			if data_Type == "ants" {
-				n_Ants, _ = strconv.Atoi(line)
-			} else {
-				return arrayRooms, LinkedRooms, -1, "ERROR:invalid number of Ants"
-			}
-		} else {
-			if data_Type == "start" {
-				isStart = true
-			} else if data_Type == "end" {
-				isEnd = true
-			} else if data_Type == "room" {
-				if isStart {
-					if start == "" {
-						start = strings.Split(line, " ")[0]
-						isStart = false
-						continue
-					} else {
-						return arrayRooms, LinkedRooms, -1, "ERROR: invalid data format"
-					}
-				}
-				if isEnd {
-					if end == "" {
-						end = strings.Split(line, " ")[0]
-						isEnd = false
-						continue
-					}else {
-						return arrayRooms, LinkedRooms, -1, "ERROR: invalid data format"
-					}
-				} 
-				arrayRooms = append(arrayRooms, strings.Split(line, " ")[0])
-			} else if data_Type == "link" {
-				LinkedRooms = append(arrayRooms, line)
-			}
-		}
-	}
-	if (start == "" || end == ""){
-		return  arrayRooms, LinkedRooms, -1, "ERROR: invalid data format, no start/end room found"
-	}
-	newArray := []string{}
-	newArray = append(newArray, start)
-	arrayRooms = append(arrayRooms, end)
-	newArray = append(newArray, arrayRooms...)
-	return newArray, LinkedRooms, n_Ants, ""
 }
 
 func search(str string, char byte) int {

@@ -36,7 +36,6 @@ func (my_Graph *Graph) DFSExplore(root *rooms.Room,end string) {
 	if root.GetName() == end {
 		root.SetVisited(false)
 		my_Graph.Paths = append(my_Graph.Paths, MyStack.ConvertToArray())
-		MyStack.Show()
 		MyStack.Pop()
 		return
 	}

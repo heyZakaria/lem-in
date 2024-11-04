@@ -27,18 +27,6 @@ func GetAllPaths(arrayOfPaths [][]string) {
 	}
 }
 
-func ShowPathList() {
-	for _, path := range PathsList {
-		fmt.Println("====================================")
-		fmt.Printf("length : %d \n", path.length)
-		fmt.Printf("Ants : %v \n", path.Ants)
-		for _, room := range path.arrayOfRooms {
-			fmt.Printf("-> %v", room)
-		}
-		fmt.Println()
-	}
-}
-
 func MakeAntsInPlaces(number_Ants int) {
 	paths_size := len(PathsList)
 	ant_Id := 1
